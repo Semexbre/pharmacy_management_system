@@ -1,0 +1,26 @@
+<div class="max-w-2xl">
+  <h1 class="text-2xl font-bold mb-5"><%= heading %></h1>
+
+  <form method="post" action="<%= action %>" class="card grid gap-4 sm:grid-cols-2">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <%- include('../partials/field', { name: 'name', label: 'Name (brand) *', value: values.name, error: errors.name, wrap: 'sm:col-span-2', attrs: 'autofocus' }) %>
+    <%- include('../partials/field', { name: 'generic_name', label: 'Generic name', value: values.generic_name, error: errors.generic_name }) %>
+    <%- include('../partials/field', { name: 'barcode', label: 'Barcode (scan or type)', value: values.barcode, error: errors.barcode }) %>
+    <%- include('../partials/field', { name: 'dosage_form', label: 'Dosage form', value: values.dosage_form, error: null, attrs: 'list="dosage-forms"' }) %>
+    <datalist id="dosage-forms">
+      <% dosageForms.forEach((f) => { %><option value="<%= f %>"><% }) %>
+    </datalist>
+    <%- include('../partials/field', { name: 'strength', label: 'Strength (e.g. 500 mg)', value: values.strength, error: null }) %>
+    <%- include('../partials/field', { name: 'reorder_level', label: 'Reorder level (low-stock threshold)', value: values.reorder_level, error: errors.reorder_level, attrs: 'inputmode="numeric"' }) %>
+
+    <div class="sm:col-span-2">
+      <label class="label" for="description">Description / notes</label>
+      <textarea id="description" name="description" rows="3" class="input"><%= values.description ?? '' %></textarea>
+    </div>
+
+    <div class="sm:col-span-2 flex gap-3">
+      <button class="btn btn-primary"><%= submitLabel %></button>
+      <a href="<%= cancelHref %>" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>

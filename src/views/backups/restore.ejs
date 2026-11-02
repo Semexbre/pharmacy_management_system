@@ -1,0 +1,12 @@
+<section class="card max-w-xl mx-auto">
+  <h1 class="text-2xl font-bold mb-3">Restore backup</h1>
+  <p class="break-all mb-4"><%= filename %></p>
+  <p class="text-red-800 mb-4">This replaces the current database with the selected backup. Changes made since that backup will no longer be in the active database. A safety backup is created first. All users will be signed out; use the accounts and passwords saved in the restored backup.</p>
+  <form method="post" action="/backups/<%= filename %>/restore" class="space-y-4">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="password" class="label">Your current password</label><input id="password" name="password" type="password" autocomplete="current-password" class="input" required></div>
+    <div><label for="confirm" class="label">Type RESTORE to confirm</label><input id="confirm" name="confirm" class="input" pattern="RESTORE" autocomplete="off" required></div>
+    <button class="btn btn-danger">Restore and sign out</button>
+    <a href="/backups" class="btn btn-secondary">Cancel</a>
+  </form>
+</section>

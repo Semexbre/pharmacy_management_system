@@ -1,0 +1,30 @@
+{
+  "name": "pharmacy-pms",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline-first pharmacy management system",
+  "main": "electron/main.js",
+  "scripts": {
+    "postinstall": "install-electron",
+    "css:build": "tailwindcss -i ./electron/public/css/input.css -o ./electron/public/css/app.css --minify",
+    "css:watch": "tailwindcss -i ./electron/public/css/input.css -o ./electron/public/css/app.css --watch",
+    "start": "npm run css:build && electron .",
+    "dev": "npm run css:build && concurrently -k \"npm:css:watch\" \"electron .\"",
+    "serve": "npm run css:build && node scripts/run-node.js src/server.js",
+    "test": "npm run css:build && node scripts/run-node.js --test tests/checkout.test.js tests/alerts.test.js tests/security.test.js && node scripts/run-node.js tests/smoke.js",
+    "test:desktop": "npm run css:build && electron tests/desktop.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "ejs": "^7.0.2",
+    "express": "^5.3.0",
+    "express-ejs-layouts": "^2.5.1",
+    "express-session": "^1.19.0"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "electron": "^45.2.1",
+    "tailwindcss": "^3.4.19"
+  }
+}

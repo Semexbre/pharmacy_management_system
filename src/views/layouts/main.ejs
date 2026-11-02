@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="<%= csrfToken %>">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'">
+  <title><%= title %> · Pharmacy PMS</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="min-h-screen flex flex-col bg-slate-100 text-slate-800">
+
+  <header class="bg-emerald-700 text-white shadow print:hidden">
+    <div class="max-w-6xl mx-auto px-6 py-3 flex flex-wrap gap-4 items-center justify-between">
+      <a href="/" class="text-lg font-semibold tracking-tight">💊 Pharmacy PMS</a>
+      <nav class="flex flex-wrap gap-4 items-center text-sm">
+        <% if (user && !user.must_change_password) { %>
+        <% if (user.role === 'admin') { %>
+        <a href="/" class="<%= currentPath === '/' ? 'font-semibold underline' : 'opacity-90 hover:opacity-100' %>">Dashboard</a>
+        <% } %>
+        <a href="/pos" class="<%= currentPath.startsWith('/pos') ? 'font-semibold underline' : 'opacity-90 hover:opacity-100' %>">POS</a>
+        <% if (user.role === 'admin') { %>
+        <a href="/medicines" class="<%= currentPath.startsWith('/medicines') ? 'font-semibold underline' : 'opacity-90 hover:opacity-100' %>">Inventory</a>
+        <a href="/alerts?days=<%= alertDays %>" class="<%= currentPath === '/alerts' ? 'font-semibold underline' : 'opacity-90 hover:opacity-100' %>">
+          Alerts
+          <span class="badge bg-amber-100 text-amber-800" title="Low-stock medicines" aria-label="<%= alertCounts.low %> low-stock medicines">Low <%= alertCounts.low %></span>
+          <span class="badge bg-orange-100 text-orange-800" title="Batches expiring within <%= alertDays %> days" aria-label="<%= alertCounts.near %> near-expiry batches">Soon <%= alertCounts.near %></span>
+          <span class="badge bg-red-100 text-red-700" title="Expired batches with stock" aria-label="<%= alertCounts.expired %> expired batches">Expired <%= alertCounts.expired %></span>
+        </a>
+        <a href="/users" class="hover:underline">Users</a>
+        <a href="/backups" class="hover:underline">Backups<%= backupError ? ' ⚠' : '' %></a>
+        <% } %>
+        <% } %>
+        <% if (user) { %>
+        <a href="/change-password" class="hover:underline"><%= user.full_name %> · Password</a>
+        <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="hover:underline">Log out</button></form>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+    <main class="flex-1 w-full max-w-6xl mx-auto p-6">
+    <% if (user && user.role === 'admin' && backupError) { %><p class="mb-4 rounded bg-red-100 p-3 text-red-800">Automatic backup needs attention. <a class="underline" href="/backups">Review backups</a>.</p><% } %>
+    <%- include('../partials/flash') %>
+    <%- body %>
+  </main>
+
+  <footer class="text-center text-xs text-slate-500 py-3 print:hidden">
+    Offline mode · all data stays on this computer
+  </footer>
+
+  <script src="/js/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+<% if (flash) { %>
+  <% const styles = {
+       success: 'bg-emerald-50 border-emerald-300 text-emerald-800',
+       error:   'bg-red-50 border-red-300 text-red-800',
+       info:    'bg-sky-50 border-sky-300 text-sky-800' }; %>
+  <div class="mb-5 rounded-md border px-4 py-3 text-sm <%= styles[flash.type] %>"><%= flash.text %></div>
+<% } %>

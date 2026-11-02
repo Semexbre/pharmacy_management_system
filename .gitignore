@@ -1,0 +1,8 @@
+node_modules/
+dist/
+electron/public/css/app.css
+*.db
+*.db-wal
+*.db-shm
+data/
+session-secret

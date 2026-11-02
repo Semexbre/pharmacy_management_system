@@ -1,0 +1,27 @@
+<h1 class="text-2xl font-bold mb-5">User management</h1>
+<form method="post" action="/users" class="card grid gap-4 sm:grid-cols-2 mb-6">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div><label for="username" class="label">Username</label><input id="username" name="username" class="input" pattern="[a-zA-Z0-9_.-]{3,64}" maxlength="64" required></div>
+  <div><label for="full_name" class="label">Full name</label><input id="full_name" name="full_name" class="input" maxlength="100" required></div>
+  <div><label for="role" class="label">Role</label><select id="role" name="role" class="input"><option value="cashier">Cashier (POS only)</option><option value="admin">Administrator</option></select></div>
+  <div><label for="password" class="label">Temporary password (at least 12 characters)</label><input id="password" name="password" type="password" class="input" minlength="12" autocomplete="new-password" required></div>
+  <div><button class="btn btn-primary">Create user</button></div>
+  <p class="text-sm text-slate-500">New users and users with reset passwords must change their password at sign-in.</p>
+</form>
+<div class="card overflow-x-auto"><table class="w-full">
+  <thead><tr><th class="th">User</th><th class="th">Role / status</th><th class="th">Actions</th></tr></thead>
+  <tbody><% users.forEach((account) => { %><tr>
+    <td class="td"><%= account.full_name %><p class="text-xs text-slate-500"><%= account.username %></p></td>
+    <td class="td"><%= account.role %> · <%= account.is_active ? 'Active' : 'Inactive' %><% if (account.must_change_password) { %><p class="text-xs">Password change required</p><% } %></td>
+    <td class="td"><% if (account.id !== user.id) { %>
+      <% if (account.is_active) { %><form class="mb-2" method="post" action="/users/<%= account.id %>/deactivate" data-confirm="Deactivate this user and end their sessions?">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-danger btn-sm">Deactivate</button>
+      </form><% } %>
+      <form method="post" action="/users/<%= account.id %>/reset" class="flex gap-2" data-confirm="Reset this user's password and end their sessions?">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input name="password" type="password" class="input" aria-label="Temporary password for <%= account.username %>" placeholder="New temporary password" autocomplete="new-password" minlength="12" required>
+        <button class="btn btn-secondary btn-sm">Reset password</button>
+      </form>
+    <% } else { %><a class="text-emerald-700 underline" href="/change-password">Change my password</a><% } %></td>
+  </tr><% }) %></tbody>
+</table></div>

@@ -1,0 +1,55 @@
+<h1 class="text-2xl font-bold mb-2">Stock alerts</h1>
+<p class="text-sm text-slate-600 mb-5">Counts include active and inactive medicines. Low stock counts all units on hand, including expired stock.</p>
+<%- include('../partials/alertCards') %>
+<form method="get" action="/alerts" class="card flex flex-wrap items-end gap-3 mb-6">
+  <div><label for="type" class="label">Alert type</label>
+    <select id="type" name="type" class="input">
+      <% [['all', 'All alerts'], ['low', 'Low stock'], ['near', 'Near expiry'], ['expired', 'Already expired']].forEach(([key, label]) => { %>
+        <option value="<%= key %>" <%= filters.type === key ? 'selected' : '' %>><%= label %></option>
+      <% }) %>
+    </select>
+  </div>
+  <div><label for="days" class="label">Near-expiry window</label>
+    <select id="days" name="days" class="input">
+      <% alertTiers.forEach((days) => { %><option value="<%= days %>" <%= filters.days === days ? 'selected' : '' %>><%= days %> days</option><% }) %>
+    </select>
+  </div>
+  <div class="flex-1"><label for="q" class="label">Medicine name or batch number</label>
+    <input id="q" name="q" value="<%= filters.q %>" class="input" maxlength="150" placeholder="Search alerts">
+  </div>
+  <button class="btn btn-primary">Apply filters</button>
+  <a href="/alerts" class="btn btn-secondary">Reset</a>
+</form>
+<p class="text-xs text-slate-500 mb-5">Summary counts cover all stock; the lists below follow your filters. Expiry windows include today and the final day.</p>
+<% if (filters.type === 'all' || filters.type === 'low') { %>
+<section class="mb-6" aria-labelledby="low-heading">
+  <h2 id="low-heading" class="text-lg font-semibold mb-3">Low stock · <%= low.length %> medicines</h2>
+  <div class="card overflow-x-auto">
+    <% if (!low.length) { %><p class="text-slate-500">No low-stock medicines match these filters.</p><% } else { %>
+    <table class="w-full"><thead><tr><th class="th">Medicine</th><th class="th text-right">On hand</th><th class="th text-right">Reorder level</th><th class="th">Status</th></tr></thead>
+      <tbody><% low.forEach((m) => { %><tr>
+        <td class="td"><a href="/medicines/<%= m.id %>" class="text-emerald-700 hover:underline"><%= m.name %></a><% if (!m.is_active) { %> <span class="badge bg-slate-100">Inactive</span><% } %></td>
+        <td class="td text-right"><%= m.total_stock %></td><td class="td text-right"><%= m.reorder_level %></td>
+        <td class="td"><span class="badge bg-amber-100 text-amber-800"><%= m.total_stock === 0 ? 'Out of stock' : 'Reorder' %></span></td>
+      </tr><% }) %></tbody>
+    </table><% } %>
+  </div>
+</section>
+<% } %>
+<% for (const [key, label, rows] of [['near', 'Near expiry', near], ['expired', 'Already expired — review for write-off', expired]]) { %>
+  <% if (filters.type === 'all' || filters.type === key) { %>
+  <section class="mb-6" aria-labelledby="<%= key %>-heading">
+    <h2 id="<%= key %>-heading" class="text-lg font-semibold mb-3"><%= label %> · <%= rows.length %> batches</h2>
+    <div class="card overflow-x-auto">
+      <% if (!rows.length) { %><p class="text-slate-500">No <%= key === 'near' ? 'near-expiry' : 'expired' %> batches match these filters.</p><% } else { %>
+      <table class="w-full"><thead><tr><th class="th">Medicine</th><th class="th">Batch</th><th class="th">Expiry date</th><th class="th text-right">On hand</th><th class="th">Status</th></tr></thead>
+        <tbody><% rows.forEach((b) => { %><tr>
+          <td class="td"><a href="/medicines/<%= b.medicine_id %>" class="text-emerald-700 hover:underline"><%= b.name %></a><% if (!b.is_active) { %> <span class="badge bg-slate-100">Inactive</span><% } %></td>
+          <td class="td"><%= b.batch_number %></td><td class="td"><%= b.expiry_date %></td><td class="td text-right"><%= b.quantity_on_hand %></td>
+          <td class="td"><span class="badge <%= key === 'expired' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-800' %>"><%= key === 'expired' ? 'Review for write-off' : b.days_left === 0 ? 'Expires today' : b.days_left + ' days left' %></span></td>
+        </tr><% }) %></tbody>
+      </table><% } %>
+    </div>
+  </section>
+  <% } %>
+<% } %>

@@ -1,0 +1,17 @@
+<h1 class="text-2xl font-bold mb-3">Database backups</h1>
+<p class="mb-4 text-slate-600">Automatic backup at startup and every <%= backupState.intervalMs / 3600000 %> hours while the app is running. The latest <%= backupState.retention %> backups are kept.</p>
+<% if (backupState.lastError) { %><p role="alert" class="mb-4 text-red-700">Last backup operation failed: <%= backupState.lastError %></p><% } %>
+<form method="post" action="/backups" class="mb-6"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-primary" <%= backupState.enabled ? '' : 'disabled' %>>Back up now</button></form>
+<p class="text-sm text-slate-500 mb-4">Restoring replaces medicines, stock, sales, and users with the saved state. Copy backups to a separate drive to protect against disk failure.</p>
+<div class="card overflow-x-auto"><table class="w-full">
+  <thead><tr><th class="th">Backup (UTC timestamp)</th><th class="th text-right">Size</th><th class="th">Actions</th></tr></thead>
+  <tbody><% files.forEach((file) => { %><tr>
+    <td class="td break-all"><%= file.name %></td><td class="td text-right whitespace-nowrap"><%= (file.bytes / 1024).toFixed(1) %> KB</td>
+    <td class="td"><a class="btn btn-secondary btn-sm" href="/backups/<%= file.name %>/restore">Review restore</a>
+      <% if (backupState.canExport) { %><form method="post" action="/backups/<%= file.name %>/export" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-secondary btn-sm">Copy to folder…</button></form><% } %>
+    </td>
+  </tr><% }) %>
+  <% if (!files.length) { %><tr><td colspan="3" class="td text-slate-500">No backups yet.</td></tr><% } %>
+  </tbody>
+</table></div>
+<% if (!backupState.canExport) { %><p class="mt-4 text-sm text-slate-500">Open the desktop app to copy backups using the folder picker.</p><% } %>

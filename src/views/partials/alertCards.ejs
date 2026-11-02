@@ -1,0 +1,17 @@
+<div class="grid gap-4 sm:grid-cols-3 mb-6" aria-label="Stock alert counts">
+  <a href="/alerts?type=low&amp;days=<%= alertDays %>" class="card border-l-4 border-amber-500 hover:bg-amber-50">
+    <h2 class="font-semibold">Low stock</h2>
+    <p class="text-3xl font-bold mt-2" data-alert-count="low"><%= alertCounts.low %></p>
+    <p class="text-sm text-slate-600">Medicines at or below reorder level</p>
+  </a>
+  <a href="/alerts?type=near&amp;days=<%= alertDays %>" class="card border-l-4 border-orange-500 hover:bg-orange-50">
+    <h2 class="font-semibold">Near expiry</h2>
+    <p class="text-3xl font-bold mt-2" data-alert-count="near"><%= alertCounts.near %></p>
+    <p class="text-sm text-slate-600">Stocked batches expiring within <%= alertDays %> days</p>
+  </a>
+  <a href="/alerts?type=expired&amp;days=<%= alertDays %>" class="card border-l-4 border-red-600 hover:bg-red-50">
+    <h2 class="font-semibold">Already expired</h2>
+    <p class="text-3xl font-bold mt-2" data-alert-count="expired"><%= alertCounts.expired %></p>
+    <p class="text-sm text-slate-600">Stocked batches to review for write-off</p>
+  </a>
+</div>

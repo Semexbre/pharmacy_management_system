@@ -1,0 +1,7 @@
+<div class="<%= locals.wrap || '' %>">
+  <label class="label" for="<%= name %>"><%= label %></label>
+  <input id="<%= name %>" name="<%= name %>" type="<%= locals.type || 'text' %>"
+         value="<%= value ?? '' %>" class="input <%= error ? 'input-error' : '' %>"
+         <%- locals.attrs || '' %>>
+  <% if (error) { %><p class="field-error"><%= error %></p><% } %>
+</div>

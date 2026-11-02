@@ -1,0 +1,74 @@
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl font-bold">Point of sale</h1>
+  <p class="text-xs text-slate-500">F2 focus scanner · F9 complete sale · Esc clear search</p>
+</div>
+
+<div id="msg" class="hidden mb-4 rounded-md border px-4 py-3 text-sm"></div>
+
+<div class="grid gap-5 lg:grid-cols-3">
+  <!-- Left: scan + cart -->
+  <section class="lg:col-span-2 space-y-4">
+    <div class="card relative">
+      <label class="label" for="scan">Scan barcode or search by name</label>
+      <input id="scan" class="input text-lg" autocomplete="off" autofocus
+             placeholder="Scan barcode, or type a name and pick a result">
+      <ul id="results" class="hidden absolute left-5 right-5 z-10 mt-1 max-h-72 overflow-y-auto
+                              rounded-md border border-slate-200 bg-white shadow-lg divide-y divide-slate-100"></ul>
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="th">Item</th>
+            <th class="th text-right">Price</th>
+            <th class="th text-center">Qty</th>
+            <th class="th text-right">Total</th>
+            <th class="th"></th>
+          </tr>
+        </thead>
+        <tbody id="cart-body" class="divide-y divide-slate-100"></tbody>
+      </table>
+      <p id="cart-empty" class="td text-center text-slate-500 py-10">Cart is empty. Scan an item to begin.</p>
+    </div>
+  </section>
+
+  <!-- Right: totals + payment -->
+  <aside class="card space-y-4 h-fit">
+    <div class="flex justify-between text-sm"><span>Subtotal</span><span id="subtotal" class="font-medium">0.00</span></div>
+
+    <div>
+      <label class="label" for="discount">Discount (amount)</label>
+      <input id="discount" class="input" inputmode="decimal" placeholder="0.00">
+    </div>
+
+    <div class="flex justify-between border-t pt-3 text-xl font-bold">
+      <span>Total</span><span id="total">0.00</span>
+    </div>
+
+    <div>
+      <label class="label" for="method">Payment method</label>
+      <select id="method" class="input">
+        <option value="cash">Cash</option>
+        <option value="card">Card</option>
+        <option value="mobile">Mobile money</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+
+    <div id="cash-box">
+      <label class="label" for="tendered">Cash tendered</label>
+      <input id="tendered" class="input" inputmode="decimal" placeholder="0.00">
+      <div class="mt-2 flex justify-between text-sm">
+        <span>Change due</span><span id="change" class="font-semibold">0.00</span>
+      </div>
+    </div>
+
+    <button id="checkout" class="btn btn-primary w-full justify-center py-3 text-base disabled:opacity-40" disabled>
+      Complete sale (F9)
+    </button>
+    <button id="clear" class="btn btn-secondary w-full justify-center">Clear cart</button>
+  </aside>
+</div>
+
+<script src="/js/pos.js" defer></script>

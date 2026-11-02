@@ -1,0 +1,85 @@
+<div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+  <h1 class="text-2xl font-bold">Inventory</h1>
+  <a href="/medicines/new" class="btn btn-primary">+ Add medicine</a>
+</div>
+
+<form method="get" action="/medicines" class="card mb-5 flex flex-wrap gap-3 items-end">
+  <div class="flex-1 min-w-[16rem]">
+    <label class="label" for="q">Search</label>
+    <input id="q" name="q" value="<%= q %>" class="input" autofocus
+           placeholder="Name, generic name, or scan a barcode">
+  </div>
+  <div>
+    <label class="label" for="status">Show</label>
+    <select id="status" name="status" class="input">
+      <% ['active', 'inactive', 'all'].forEach((s) => { %>
+        <option value="<%= s %>" <%= status === s ? 'selected' : '' %>><%= s[0].toUpperCase() + s.slice(1) %></option>
+      <% }) %>
+    </select>
+  </div>
+  <button class="btn btn-secondary">Search</button>
+</form>
+
+<div class="bg-white rounded-lg shadow overflow-x-auto">
+  <table class="w-full">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="th">Medicine</th>
+        <th class="th">Barcode</th>
+        <th class="th text-right">In stock</th>
+        <th class="th">Nearest expiry</th>
+        <th class="th">Status</th>
+        <th class="th"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% if (rows.length === 0) { %>
+        <tr><td colspan="6" class="td text-center text-slate-500 py-8">No medicines found.</td></tr>
+      <% } %>
+      <% rows.forEach((m) => { %>
+        <% const exp = m.nearest_expiry ? expiryStatus(m.nearest_expiry) : null; %>
+        <tr class="<%= m.is_active ? '' : 'opacity-60' %>">
+          <td class="td">
+            <a href="/medicines/<%= m.id %>" class="font-medium text-emerald-700 hover:underline"><%= m.name %></a>
+            <div class="text-xs text-slate-500">
+              <%= [m.generic_name, m.strength, m.dosage_form].filter(Boolean).join(' · ') %>
+            </div>
+          </td>
+          <td class="td text-slate-500"><%= m.barcode || '—' %></td>
+          <td class="td text-right">
+            <span class="font-semibold"><%= m.total_stock %></span>
+            <% if (m.total_stock === 0) { %>
+              <span class="badge bg-red-100 text-red-700">Out</span>
+            <% } else if (m.total_stock <= m.reorder_level) { %>
+              <span class="badge bg-amber-100 text-amber-800">Low</span>
+            <% } %>
+          </td>
+          <td class="td">
+            <% if (exp) { %>
+              <%= m.nearest_expiry %>
+              <% if (exp.key === 'expired') { %><span class="badge bg-red-100 text-red-700">Expired</span>
+              <% } else if (exp.key === 'soon') { %><span class="badge bg-amber-100 text-amber-800"><%= exp.days %>d</span><% } %>
+            <% } else { %>—<% } %>
+          </td>
+          <td class="td">
+            <span class="badge <%= m.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600' %>">
+              <%= m.is_active ? 'Active' : 'Inactive' %>
+            </span>
+          </td>
+          <td class="td text-right"><a href="/medicines/<%= m.id %>" class="btn btn-secondary btn-sm">Open</a></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<div class="mt-4 flex items-center justify-between text-sm text-slate-600">
+  <span><%= total %> medicine<%= total === 1 ? '' : 's' %></span>
+  <% if (pages > 1) { %>
+    <div class="flex items-center gap-2">
+      <% if (page > 1) { %><a class="btn btn-secondary btn-sm" href="/medicines?<%= baseQuery %>&page=<%= page - 1 %>">← Prev</a><% } %>
+      <span>Page <%= page %> of <%= pages %></span>
+      <% if (page < pages) { %><a class="btn btn-secondary btn-sm" href="/medicines?<%= baseQuery %>&page=<%= page + 1 %>">Next →</a><% } %>
+    </div>
+  <% } %>
+</div>

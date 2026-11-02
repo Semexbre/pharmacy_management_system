@@ -1,0 +1,31 @@
+<div class="flex gap-3 mb-5 print:hidden">
+  <a href="/pos" class="btn btn-primary">New sale</a>
+  <button type="button" id="print-receipt" class="btn btn-secondary">Print receipt</button>
+</div>
+<article class="card max-w-2xl mx-auto print:shadow-none">
+  <h1 class="text-2xl font-bold">Pharmacy PMS</h1>
+  <h2 class="font-semibold mt-2">Receipt <%= sale.receipt_no %></h2>
+  <p class="text-sm text-slate-600"><%= when %> · Cashier: <%= sale.cashier %></p>
+  <table class="w-full mt-5">
+    <thead><tr><th class="th">Item / batch</th><th class="th text-right">Qty</th><th class="th text-right">Price</th><th class="th text-right">Amount</th></tr></thead>
+    <tbody>
+      <% items.forEach((item) => { %>
+        <tr>
+          <td class="td"><%= item.name %> <%= item.strength || '' %><div class="text-xs text-slate-500">Batch <%= item.batch_number %></div></td>
+          <td class="td text-right"><%= item.quantity %></td>
+          <td class="td text-right"><%= money(item.unit_price) %></td>
+          <td class="td text-right"><%= money(item.line_total) %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <dl class="mt-4 border-t pt-4 space-y-2">
+    <div class="flex justify-between"><dt>Subtotal</dt><dd><%= money(sale.subtotal) %></dd></div>
+    <div class="flex justify-between"><dt>Discount</dt><dd><%= money(sale.discount) %></dd></div>
+    <div class="flex justify-between font-bold"><dt>Total</dt><dd><%= money(sale.total) %></dd></div>
+    <div class="flex justify-between"><dt>Payment method</dt><dd><%= sale.payment_method %></dd></div>
+    <div class="flex justify-between"><dt>Amount paid</dt><dd><%= money(sale.amount_tendered) %></dd></div>
+    <div class="flex justify-between"><dt>Change</dt><dd><%= money(change) %></dd></div>
+  </dl>
+</article>
+<script src="/js/receipt.js" defer></script>

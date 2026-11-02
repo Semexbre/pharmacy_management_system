@@ -1,0 +1,79 @@
+<div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+  <div>
+    <a href="/medicines" class="text-sm text-emerald-700 hover:underline">← Inventory</a>
+    <h1 class="text-2xl font-bold mt-1">
+      <%= medicine.name %>
+      <% if (!medicine.is_active) { %><span class="badge bg-slate-200 text-slate-600 align-middle">Inactive</span><% } %>
+    </h1>
+    <p class="text-sm text-slate-500">
+      <%= [medicine.generic_name, medicine.strength, medicine.dosage_form].filter(Boolean).join(' · ') || 'No details' %>
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="/medicines/<%= medicine.id %>/edit" class="btn btn-secondary">Edit</a>
+    <form method="post" action="/medicines/<%= medicine.id %>/toggle"
+          data-confirm="<%= medicine.is_active ? 'Deactivate this medicine? It will no longer be sellable.' : 'Reactivate this medicine?' %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-secondary"><%= medicine.is_active ? 'Deactivate' : 'Reactivate' %></button>
+    </form>
+    <% if (medicine.is_active) { %>
+      <a href="/medicines/<%= medicine.id %>/batches/new" class="btn btn-primary">+ Receive stock</a>
+    <% } %>
+  </div>
+</div>
+
+<div class="grid gap-4 sm:grid-cols-4 mb-6">
+  <div class="card"><p class="text-xs uppercase text-slate-500">Total in stock</p><p class="text-2xl font-bold"><%= totalStock %></p></div>
+  <div class="card"><p class="text-xs uppercase text-slate-500">Reorder level</p><p class="text-2xl font-bold"><%= medicine.reorder_level %></p></div>
+  <div class="card"><p class="text-xs uppercase text-slate-500">Barcode</p><p class="text-lg font-semibold break-all"><%= medicine.barcode || '—' %></p></div>
+  <div class="card"><p class="text-xs uppercase text-slate-500">Batches</p><p class="text-2xl font-bold"><%= batches.length %></p></div>
+</div>
+
+<% if (medicine.description) { %>
+  <div class="card mb-6 text-sm whitespace-pre-line"><%= medicine.description %></div>
+<% } %>
+
+<h2 class="text-lg font-semibold mb-3">Batches</h2>
+<div class="bg-white rounded-lg shadow overflow-x-auto">
+  <table class="w-full">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="th">Batch #</th><th class="th">Expiry</th>
+        <th class="th text-right">Cost</th><th class="th text-right">Price</th>
+        <th class="th text-right">Received</th><th class="th text-right">On hand</th>
+        <th class="th">Received on</th><th class="th"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% if (batches.length === 0) { %>
+        <tr><td colspan="8" class="td text-center text-slate-500 py-8">No batches yet. Receive stock to get started.</td></tr>
+      <% } %>
+      <% batches.forEach((b) => { %>
+        <% const exp = expiryStatus(b.expiry_date); %>
+        <tr class="<%= b.quantity_on_hand === 0 ? 'text-slate-400' : '' %>">
+          <td class="td font-medium"><%= b.batch_number %></td>
+          <td class="td">
+            <%= b.expiry_date %>
+            <% if (b.quantity_on_hand > 0 && exp.key === 'expired') { %><span class="badge bg-red-100 text-red-700">Expired</span>
+            <% } else if (b.quantity_on_hand > 0 && exp.key === 'soon') { %><span class="badge bg-amber-100 text-amber-800"><%= exp.days %>d left</span><% } %>
+          </td>
+          <td class="td text-right"><%= money(b.purchase_cost) %></td>
+          <td class="td text-right"><%= money(b.selling_price) %></td>
+          <td class="td text-right"><%= b.quantity_received %></td>
+          <td class="td text-right font-semibold"><%= b.quantity_on_hand %></td>
+          <td class="td"><%= b.received_at.slice(0, 10) %></td>
+          <td class="td text-right whitespace-nowrap">
+            <% if (medicine.is_active) { %>
+            <a href="/medicines/<%= medicine.id %>/batches/<%= b.id %>/edit" class="btn btn-secondary btn-sm">Edit</a>
+            <form method="post" action="/medicines/<%= medicine.id %>/batches/<%= b.id %>/delete" class="inline"
+                  data-confirm="Delete batch <%= b.batch_number %>? This cannot be undone.">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn btn-danger btn-sm">Delete</button>
+            </form>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>

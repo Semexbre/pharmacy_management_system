@@ -1,0 +1,40 @@
+<div class="max-w-2xl">
+  <a href="/medicines/<%= medicine.id %>" class="text-sm text-emerald-700 hover:underline">← <%= medicine.name %></a>
+  <h1 class="text-2xl font-bold mt-1 mb-5"><%= mode === 'create' ? 'Receive stock' : 'Edit batch' %></h1>
+
+  <form method="post" action="<%= action %>" class="card grid gap-4 sm:grid-cols-2">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <%- include('../partials/field', { name: 'batch_number', label: 'Batch number *', value: values.batch_number, error: errors.batch_number, attrs: 'autofocus' }) %>
+    <%- include('../partials/field', { name: 'expiry_date', label: 'Expiry date *', type: 'date', value: values.expiry_date, error: errors.expiry_date,
+         attrs: mode === 'create' ? `min="${todayISO()}"` : '' }) %>
+    <%- include('../partials/field', { name: 'purchase_cost', label: 'Purchase cost (per unit) *', value: values.purchase_cost, error: errors.purchase_cost, attrs: 'inputmode="decimal"' }) %>
+    <%- include('../partials/field', { name: 'selling_price', label: 'Selling price (per unit) *', value: values.selling_price, error: errors.selling_price, attrs: 'inputmode="decimal"' }) %>
+    <%- include('../partials/field', {
+         name: 'quantity',
+         label: mode === 'create' ? 'Quantity received *' : 'Quantity on hand (stock correction) *',
+         value: values.quantity, error: errors.quantity, attrs: 'inputmode="numeric"' }) %>
+
+    <% if (mode === 'edit') { %>
+      <div>
+        <p class="label">Originally received</p>
+        <p class="py-2 text-sm text-slate-600"><%= batch.quantity_received %> units (fixed)</p>
+      </div>
+    <% } %>
+
+    <div class="sm:col-span-2">
+      <label class="label" for="notes">Notes (supplier, invoice no., reason for correction…)</label>
+      <textarea id="notes" name="notes" rows="2" class="input"><%= values.notes ?? '' %></textarea>
+    </div>
+
+    <% if (mode === 'edit') { %>
+      <p class="sm:col-span-2 text-xs text-slate-500">
+        Changing prices affects future sales only. Past sales keep the price they were sold at.
+      </p>
+    <% } %>
+
+    <div class="sm:col-span-2 flex gap-3">
+      <button class="btn btn-primary"><%= mode === 'create' ? 'Receive batch' : 'Save changes' %></button>
+      <a href="/medicines/<%= medicine.id %>" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
