@@ -46,10 +46,11 @@ function setup(today = '2028-02-01') {
   return db;
 }
 
-test('low stock includes no batches, zero stock and exact threshold; sums all batches', () => {
+test('low stock includes no batches, zero stock and exact threshold; excludes expired units', () => {
   setup();
   const rows = alerts.list({ today: '2028-02-01', type: 'low' }).low;
-  assert.deepEqual(rows.map(r => r.name).sort(), ['At threshold', 'Empty %_ medicine', 'No batches']);
+  assert.deepEqual(rows.map(r => r.name).sort(), ['At threshold', 'Empty %_ medicine', 'Inactive expired', 'No batches']);
+  assert.equal(rows.find(r => r.name === 'Inactive expired').total_stock, 0);
   assert.equal(rows.find(r => r.name === 'At threshold').total_stock, 5);
 });
 
@@ -57,7 +58,7 @@ test('30/60/90 windows include both boundaries and exclude expired/empty batches
   setup();
   for (const [days, count] of [[30, 2], [60, 4], [90, 6]]) {
     const opts = { days, today: '2028-02-01' };
-    assert.deepEqual(alerts.summary(opts), { low: 3, near: count, expired: 1 });
+    assert.deepEqual(alerts.summary(opts), { low: 4, near: count, expired: 1 });
     const rows = alerts.list(opts);
     assert.equal(rows.near.length, count);
     assert.equal(rows.near.at(-1).days_left, days);
@@ -105,7 +106,7 @@ test('dashboard, badges and filtered page reflect seeded buckets and a real chec
       return response.text();
     }
     const dashboard = await page('/?days=30');
-    assert.match(dashboard, /data-alert-count="low">3</);
+    assert.match(dashboard, /data-alert-count="low">4</);
     assert.match(dashboard, /data-alert-count="near">2</);
     assert.match(dashboard, /data-alert-count="expired">1</);
     assert.match(dashboard, /aria-label="2 near-expiry batches"/);
@@ -129,9 +130,9 @@ test('dashboard, badges and filtered page reflect seeded buckets and a real chec
     assert.equal(response.status, 200);
     const sale = await response.json();
     const after = await page('/?days=30');
-    assert.match(after, /data-alert-count="low">4</);
+    assert.match(after, /data-alert-count="low">5</);
     assert.match(after, /data-alert-count="near">2</);
-    assert.match(await page('/pos/receipt/' + sale.saleId), /aria-label="4 low-stock medicines"/);
+    assert.match(await page('/pos/receipt/' + sale.saleId), /aria-label="5 low-stock medicines"/);
   } finally {
     await server.close();
   }

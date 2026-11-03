@@ -1,5 +1,5 @@
 <h1 class="text-2xl font-bold mb-2">Stock alerts</h1>
-<p class="text-sm text-slate-600 mb-5">Counts include active and inactive medicines. Low stock counts all units on hand, including expired stock.</p>
+<p class="text-sm text-slate-600 mb-5">Counts include active and inactive medicines. Low stock uses non-expired units; medicines with no usable stock are included.</p>
 <%- include('../partials/alertCards') %>
 <form method="get" action="/alerts" class="card flex flex-wrap items-end gap-3 mb-6">
   <div><label for="type" class="label">Alert type</label>
@@ -26,7 +26,7 @@
   <h2 id="low-heading" class="text-lg font-semibold mb-3">Low stock · <%= low.length %> medicines</h2>
   <div class="card overflow-x-auto">
     <% if (!low.length) { %><p class="text-slate-500">No low-stock medicines match these filters.</p><% } else { %>
-    <table class="w-full"><thead><tr><th class="th">Medicine</th><th class="th text-right">On hand</th><th class="th text-right">Reorder level</th><th class="th">Status</th></tr></thead>
+    <table class="w-full"><thead><tr><th class="th">Medicine</th><th class="th text-right">Non-expired stock</th><th class="th text-right">Reorder level</th><th class="th">Status</th></tr></thead>
       <tbody><% low.forEach((m) => { %><tr>
         <td class="td"><a href="/medicines/<%= m.id %>" class="text-emerald-700 hover:underline"><%= m.name %></a><% if (!m.is_active) { %> <span class="badge bg-slate-100">Inactive</span><% } %></td>
         <td class="td text-right"><%= m.total_stock %></td><td class="td text-right"><%= m.reorder_level %></td>

@@ -13,12 +13,17 @@ router.post('/login', (req, res, next) => {
   const wait = req.sessionStore.loginAttempt(req.ip);
   if (wait) {
     res.set('Retry-After', String(wait));
-    return res.status(429).render('auth/login', { title: 'Sign in', error: 'Too many sign-in attempts. Try again in 15 minutes.' });
+    const minutes = Math.ceil(wait / 60);
+    return res.status(429).render('auth/login', {
+      title: 'Sign in',
+      error: `Too many sign-in attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`,
+    });
   }
   const username = typeof req.body.username === 'string' ? req.body.username.trim().slice(0, 64) : '';
   const user = getDb().prepare('SELECT * FROM users WHERE username = ?').get(username);
   const valid = passwords.verify(req.body.password, user?.password_hash || dummyHash);
   if (!valid || !user?.is_active) return res.status(401).render('auth/login', { title: 'Sign in', error: 'Incorrect username or password.' });
+  req.sessionStore.loginSucceeded(req.ip);
   req.session.regenerate((err) => {
     if (err) return next(err);
     req.session.userId = user.id;
@@ -31,7 +36,7 @@ router.post('/login', (req, res, next) => {
 router.post('/logout', (req, res, next) => {
   req.session.destroy((err) => {
     if (err) return next(err);
-    res.clearCookie('pms.sid', { path: '/', httpOnly: true, sameSite: 'strict' });
+    res.clearCookie('pms.sid', { path: '/', httpOnly: true, sameSite: 'lax' });
     res.redirect('/login');
   });
 });

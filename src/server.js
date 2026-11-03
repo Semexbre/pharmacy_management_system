@@ -50,16 +50,18 @@ async function startServer({ port = 0, host = '127.0.0.1', dbPath, dataDir, choo
     });
 
     server.listen(port, host, () => {
+      let closing;
       resolve({
         port: server.address().port,
         backups,
-        close: () =>
-          new Promise((done) => {
+        close: () => closing ||=
+          new Promise((done, fail) => {
             server.close(async () => {
-              await backups.stop();
-              store.close();
-              closeDb(); // checkpoints the WAL
-              done();
+              try {
+                try { await backups.stop(); }
+                finally { try { store.close(); } finally { closeDb(); } }
+                done();
+              } catch (err) { fail(err); }
             });
             server.closeAllConnections();
           }),
@@ -69,18 +71,3 @@ async function startServer({ port = 0, host = '127.0.0.1', dbPath, dataDir, choo
 }
 
 module.exports = { startServer };
-
-if (require.main === module) {
-  startServer({
-    port: 3000,
-    dbPath: process.env.PMS_DB_PATH || path.join(__dirname, '..', 'data', 'pharmacy.db'),
-  }).then((server) => {
-    console.log(`[pms] dev server on http://127.0.0.1:${server.port}`);
-    const shutdown = () => server.close().then(() => process.exit(0));
-    process.once('SIGINT', shutdown);
-    process.once('SIGTERM', shutdown);
-  }).catch((err) => {
-    console.error('[pms] server startup failed:', err);
-    process.exitCode = 1;
-  });
-}

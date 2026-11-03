@@ -3,11 +3,21 @@ const { todayISO, isValidIsoDate } = require('../../utils/dates');
 
 const TIERS = [30, 60, 90];
 const TYPES = ['all', 'low', 'near', 'expired'];
-const LOW = `SELECT m.id, m.name, m.is_active, m.reorder_level,
+const STOCK = `SELECT m.id, m.name, m.is_active, m.reorder_level,
     COALESCE(SUM(b.quantity_on_hand), 0) AS total_stock
   FROM medicines m
-  LEFT JOIN inventory_batches b ON b.medicine_id = m.id AND b.quantity_on_hand > 0
-  GROUP BY m.id HAVING total_stock <= m.reorder_level`;
+  LEFT JOIN inventory_batches b ON b.medicine_id = m.id AND b.quantity_on_hand > 0 AND b.expiry_date >= @today
+  GROUP BY m.id`;
+const LOW = `${STOCK} HAVING total_stock <= m.reorder_level`;
+
+function stockSummary(input = {}) {
+  const { today } = options(input);
+  return getDb().prepare(`SELECT COUNT(*) AS total,
+    COALESCE(SUM(total_stock = 0), 0) AS out,
+    COALESCE(SUM(total_stock > 0 AND total_stock <= reorder_level), 0) AS low,
+    COALESCE(SUM(total_stock > reorder_level), 0) AS inStock
+    FROM (${STOCK})`).get({ today });
+}
 
 function options(input = {}) {
   const days = TIERS.includes(Number(input.days)) ? Number(input.days) : 90;
@@ -37,8 +47,8 @@ function list(input = {}) {
   const { days, today, q, type } = filters;
   const like = `%${q.replace(/[\\%_]/g, '\\$&')}%`;
   const low = type === 'all' || type === 'low'
-    ? getDb().prepare(`SELECT * FROM (${LOW}) WHERE name LIKE ? ESCAPE '\\'
-        ORDER BY total_stock, name COLLATE NOCASE, id`).all(like)
+    ? getDb().prepare(`SELECT * FROM (${LOW}) WHERE name LIKE @like ESCAPE '\\'
+        ORDER BY total_stock, name COLLATE NOCASE, id`).all({ today, like })
     : [];
   function batches(expired) {
     const condition = expired ? 'b.expiry_date < @today'
@@ -60,4 +70,4 @@ function list(input = {}) {
   };
 }
 
-module.exports = { TIERS, options, summary, list };
+module.exports = { TIERS, options, summary, list, stockSummary };

@@ -20,7 +20,7 @@ module.exports = function routes(backups) {
     if (!passwords.verify(req.body.password, user.password_hash)) throw new HttpError(403, 'Current password is incorrect.');
     await backups.restore(req.params.name, 1);
     await new Promise((resolve, reject) => req.session.destroy(err => err ? reject(err) : resolve()));
-    res.clearCookie('pms.sid', { path: '/', httpOnly: true, sameSite: 'strict' });
+    res.clearCookie('pms.sid', { path: '/', httpOnly: true, sameSite: 'lax' });
     res.redirect('/login?msg=Backup+restored.+Sign+in+with+credentials+from+that+backup.&type=success');
   });
   router.post('/:name/export', async (req, res) => {

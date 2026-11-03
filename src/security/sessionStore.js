@@ -50,6 +50,10 @@ class LocalSessionStore extends session.Store {
       ON CONFLICT(key) DO UPDATE SET attempts = attempts + 1`).run(key, now + 15 * 60000);
     return 0;
   }
+  loginSucceeded(key) {
+    // Only consecutive failures should accumulate toward the local lockout.
+    this.db.prepare('DELETE FROM login_limits WHERE key = ?').run(key);
+  }
   close() { clearInterval(this.timer); this.db.close(); }
 }
 function sessionSecret(dataDir) {

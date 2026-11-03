@@ -46,10 +46,11 @@ function createApp({ store, secret, backups }) {
     res.locals.todayISO = todayISO;
     res.locals.alertDays = alerts.options({ days: req.query.days }).days;
     res.locals.alertTiers = alerts.TIERS;
+    res.locals.dashboardRange = require('./modules/dashboard/service').rangeOptions(req.query).range;
     let counts;
     Object.defineProperty(res.locals, 'alertCounts', {
       enumerable: true,
-      get: () => res.locals.user?.role === 'admin' && !res.locals.user.must_change_password
+      get: () => res.locals.user && !res.locals.user.must_change_password
         ? counts || (counts = alerts.summary({ days: res.locals.alertDays })) : { low: 0, near: 0, expired: 0 },
     });
 
@@ -65,7 +66,7 @@ function createApp({ store, secret, backups }) {
   app.use(backups.middleware);
   app.use(session({
     name: 'pms.sid', store, secret, resave: false, saveUninitialized: false, rolling: true,
-    cookie: { httpOnly: true, sameSite: 'strict', secure: false, maxAge: 30 * 60000 },
+    cookie: { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 30 * 60000 },
   }));
   app.use(express.urlencoded({ extended: false, limit: '64kb' }));
   app.use(express.json({ limit: '64kb' }));
@@ -75,6 +76,7 @@ function createApp({ store, secret, backups }) {
   app.use(csrf);
   app.use(require('./modules/auth/routes'));
   app.use(requireAuth);
+  app.use('/dashboard', require('./modules/dashboard/routes'));
   app.use('/pos', posRoutes);
   app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
   app.get('/', (req, res, next) => req.user.role === 'cashier' ? res.redirect('/pos') : next());
@@ -86,8 +88,6 @@ function createApp({ store, secret, backups }) {
   app.get('/', (req, res) => {
     res.render('dashboard/index', {
       title: 'Dashboard',
-      port: req.socket.localPort,
-      startedAt: new Date().toLocaleString(),
     });
   });
 

@@ -1,18 +1,21 @@
 {
   "name": "pharmacy-pms",
-  "version": "0.1.0",
+  "productName": "Pharmacy PMS",
+  "version": "1.0.0",
+  "author": "semexbre",
   "private": true,
   "description": "Offline-first pharmacy management system",
   "main": "electron/main.js",
   "scripts": {
-    "postinstall": "install-electron",
+    "postinstall": "electron-builder install-app-deps",
     "css:build": "tailwindcss -i ./electron/public/css/input.css -o ./electron/public/css/app.css --minify",
     "css:watch": "tailwindcss -i ./electron/public/css/input.css -o ./electron/public/css/app.css --watch",
     "start": "npm run css:build && electron .",
     "dev": "npm run css:build && concurrently -k \"npm:css:watch\" \"electron .\"",
-    "serve": "npm run css:build && node scripts/run-node.js src/server.js",
-    "test": "npm run css:build && node scripts/run-node.js --test tests/checkout.test.js tests/alerts.test.js tests/security.test.js && node scripts/run-node.js tests/smoke.js",
-    "test:desktop": "npm run css:build && electron tests/desktop.js"
+    "dist": "npm run css:build && electron-builder --win",
+    "dist:dir": "npm run css:build && electron-builder --dir",
+    "test": "npm run css:build && node scripts/run-node.js --test tests/checkout.test.js tests/alerts.test.js tests/security.test.js tests/recovery.test.js tests/dashboard.test.js tests/packaging.test.js && node scripts/run-node.js tests/smoke.js",
+    "test:desktop": "npm run css:build && node scripts/run-desktop-test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -24,7 +27,11 @@
   },
   "devDependencies": {
     "concurrently": "^10.0.6",
-    "electron": "^45.2.1",
+    "electron": "45.2.1",
+    "electron-builder": "26.0.12",
     "tailwindcss": "^3.4.19"
+  },
+  "overrides": {
+    "@electron/node-gyp": "10.2.0-electron.2"
   }
 }

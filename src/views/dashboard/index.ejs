@@ -1,16 +1,43 @@
-<h1 class="text-2xl font-bold mb-5">Dashboard</h1>
-<form method="get" action="/" class="flex items-end gap-3 mb-4">
-  <div><label class="label" for="days">Near-expiry window</label>
-    <select class="input" name="days" id="days">
-      <% alertTiers.forEach((days) => { %><option value="<%= days %>" <%= days === alertDays ? 'selected' : '' %>><%= days %> days</option><% }) %>
-    </select>
+<div id="dashboard" data-range="<%= dashboardRange %>" data-days="<%= alertDays %>" class="space-y-6" aria-busy="true">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div><p class="text-xs font-semibold uppercase tracking-widest text-emerald-700 mb-1">Your pharmacy at a glance</p><h1 class="text-2xl font-bold tracking-tight">Dashboard</h1><p class="text-sm text-slate-500 mt-1" id="range-caption">Loading your local data…</p></div>
+    <form method="get" action="<%= user.role === 'admin' ? '/' : '/dashboard' %>" class="flex items-end gap-2">
+      <input type="hidden" name="range" value="<%= dashboardRange %>">
+      <div><label class="label" for="days">Near-expiry window</label><select class="input" name="days" id="days"><% alertTiers.forEach(days => { %><option value="<%= days %>" <%= days === alertDays ? 'selected' : '' %>><%= days %> days</option><% }); %></select></div>
+      <button class="btn btn-secondary">Update</button>
+    </form>
   </div>
-  <button class="btn btn-secondary">Update</button>
-</form>
-<%- include('../partials/alertCards') %>
-<section class="card">
-  <h2 class="text-lg font-semibold">Pharmacy inventory</h2>
-  <p class="mt-2 mb-4 text-slate-600">Manage medicines and receive inventory batches.</p>
-  <a href="/medicines" class="btn btn-primary">Open inventory</a>
-  <p class="mt-5 text-sm text-slate-500">Local server: <span id="server-status" class="text-slate-400">Checking…</span></p>
-</section>
+  <p id="dashboard-status" role="status" class="text-sm text-slate-500">Loading dashboard…</p>
+  <button id="dashboard-retry" type="button" class="hidden btn btn-secondary">Retry</button>
+  <noscript><p class="card">Enable JavaScript to load dashboard analytics. Navigation and forms remain available.</p></noscript>
+  <section aria-label="Key performance indicators" class="grid grid-cols-2 <%= user.role === 'admin' ? 'lg:grid-cols-5' : 'lg:grid-cols-3' %> gap-4">
+    <% const cards = [['revenue','Total sales','revenue'], ...(user.role === 'admin' ? [['profit','Gross profit','profit']] : []), ['transactions','Transactions','transactions'], ...(user.role === 'admin' ? [['inventory','Inventory value at cost','inventory']] : []), ['lowStock','Low-stock items','alerts']]; cards.forEach(([key, label, icon]) => { %>
+    <article class="card min-w-0">
+      <div class="flex items-start justify-between gap-2"><h2 class="text-sm font-medium text-slate-500"><%= label %></h2><span class="text-emerald-700 bg-emerald-50 p-2 rounded-lg"><%- include('../partials/icon', { name: icon }) %></span></div>
+      <p data-kpi="<%= key %>" class="text-2xl font-bold tracking-tight mt-4 break-words">—</p>
+      <p data-change="<%= key %>" class="text-xs mt-2 text-slate-500">Loading…</p>
+    </article><% }); %>
+  </section>
+  <div class="grid lg:grid-cols-3 gap-6">
+    <section class="card lg:col-span-2 min-w-0"><div class="flex items-center justify-between"><h2 class="font-semibold text-lg">Sales overview</h2><span class="badge bg-emerald-50 text-emerald-800">Daily revenue</span></div>
+      <p class="text-xs text-slate-500 mt-1">Completed sales · after discounts</p><div id="sales-chart" class="mt-4"></div><p id="sales-tooltip" role="status" class="text-sm text-emerald-800 min-h-6 mt-2">Hover or focus a point to see daily sales.</p>
+    </section>
+    <section class="card min-w-0"><h2 class="font-semibold text-lg">Top selling medicines</h2><p class="text-xs text-slate-500 mt-1">By quantity · revenue before sale discounts</p><ol id="top-sellers" class="mt-4 divide-y divide-slate-100"></ol></section>
+  </div>
+  <div class="grid lg:grid-cols-3 gap-6">
+    <section class="card min-w-0"><h2 class="font-semibold text-lg">Stock summary</h2><p class="text-xs text-slate-500 mt-1">Medicines · expired stock excluded</p><div id="stock-chart"></div><p id="expired-count" class="text-sm mt-4 rounded-lg bg-red-50 text-red-800 p-3"></p></section>
+    <section id="expiry-alerts" class="card lg:col-span-2 min-w-0">
+      <div class="flex justify-between items-center gap-3"><h2 class="font-semibold text-lg">Expiry alerts</h2><% if (user.role === 'admin') { %><a href="/alerts?days=<%= alertDays %>" class="text-sm text-emerald-800 hover:underline">View all →</a><% } %></div>
+      <p class="text-xs text-slate-500 mt-1">Earliest stocked batches · expired and next <%= alertDays %> days</p>
+      <ul id="expiry-list" class="mt-3 divide-y divide-slate-100"></ul>
+    </section>
+  </div>
+  <div class="grid lg:grid-cols-3 gap-6">
+    <section class="card lg:col-span-2 min-w-0"><h2 class="font-semibold text-lg">Recent transactions</h2><p class="text-xs text-slate-500 mt-1">Last 8 completed sales in this period</p>
+      <table class="w-full table-fixed mt-4 text-sm"><thead><tr class="text-left text-xs text-slate-500 border-b"><th class="py-3 w-2/5">Receipt / time</th><th class="py-3">Cashier</th><th class="py-3 text-right">Total</th></tr></thead><tbody id="recent-sales"></tbody></table>
+    </section>
+    <section class="card min-w-0"><h2 class="font-semibold text-lg">Payment overview</h2><p class="text-xs text-slate-500 mt-1">Completed sales by payment method</p><div id="payment-chart"></div></section>
+  </div>
+  <section class="rounded-2xl bg-emerald-950 text-white p-6"><h2 class="text-sm font-semibold text-emerald-200 mb-4">Business summary</h2><dl id="business-summary" class="grid grid-cols-2 lg:grid-cols-5 gap-5"></dl></section>
+</div>
+<script src="/js/dashboard.js" defer></script>

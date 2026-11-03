@@ -1,0 +1,42 @@
+appId: com.pharmacypms.desktop
+productName: Pharmacy PMS
+directories:
+  output: dist
+  buildResources: build
+files:
+  - electron/**
+  - src/**
+  - public/**
+  - package.json
+  - '!**/tests/**'
+  - '!**/test/**'
+  - '!**/docs/**'
+  - '!**/*.db'
+  - '!**/*.db-wal'
+  - '!**/*.db-shm'
+  - '!**/session-secret'
+  - '!**/logs/**'
+asar: true
+# better-sqlite3 13 ships Node-API prebuilds. npm rebuild still invokes
+# node-gyp despite gypfile:false; use the shipped binaries, tested in Electron.
+# These arguments apply only to builder's native dependency setup.
+nativeRebuilder: legacy
+npmArgs:
+  - --ignore-scripts
+asarUnpack:
+  - node_modules/better-sqlite3/**
+win:
+  # icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  deleteAppDataOnUninstall: false
+  artifactName: '${productName}-Setup-${version}-${arch}.${ext}'
+portable:
+  artifactName: '${productName}-Portable-${version}-${arch}.${ext}'

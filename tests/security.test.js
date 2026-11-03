@@ -31,7 +31,7 @@ test('login rotates session, hardens cookie, requires password change and valida
   const login = await admin.fetch('/login');
   assert.equal(login.headers.get('referrer-policy'), 'same-origin');
   assert.match(login.headers.get('set-cookie'), /HttpOnly/);
-  assert.match(login.headers.get('set-cookie'), /SameSite=Strict/);
+  assert.match(login.headers.get('set-cookie'), /SameSite=Lax/);
   const anonymousCookie = admin.cookie;
   const missingCsrf = await fetch(origin + '/login', { method: 'POST', headers: { Cookie: admin.cookie }, body: '' });
   assert.equal(missingCsrf.status, 403);
@@ -84,12 +84,39 @@ test('cashier URLs are enforced server-side; reset and deactivation revoke sessi
   assert.equal((await cashier.form('/login', { username: 'cashier', password: 'Cashier-New-Password' })).status, 401);
 }));
 
+test('successful sign-ins clear failures and do not accumulate a lockout', async () => memory(async (_server, admin) => {
+  await admin.login(); // change the first-run password
+  await admin.form('/logout', {});
+  await admin.fetch('/login');
+  for (let i = 0; i < 9; i++) {
+    assert.equal((await admin.form('/login', { username: 'admin', password: 'wrong' })).status, 401);
+  }
+  for (let i = 0; i < 11; i++) {
+    await admin.login('admin', ADMIN_PASSWORD, null);
+    assert.equal((await admin.fetch('/')).status, 200);
+    assert.equal((await admin.form('/logout', {})).status, 302);
+  }
+}));
+
 test('login attempts are limited and the limiter survives reopening its local store', async () => memory(async (_server, visitor) => {
   await visitor.fetch('/login');
   for (let i = 0; i < 10; i++) assert.equal((await visitor.form('/login', { username: 'invented-' + i, password: 'wrong' })).status, 401);
   const blocked = await visitor.form('/login', { username: 'admin', password: 'admin123' });
   assert.equal(blocked.status, 429);
   assert.ok(Number(blocked.headers.get('retry-after')) > 0);
+  const oldNow = Date.now;
+  const clockStart = oldNow();
+  try {
+    Date.now = () => clockStart + 14 * 60000;
+    const retry = await visitor.form('/login', { username: 'admin', password: 'admin123' });
+    assert.equal(retry.status, 429);
+    assert.ok(Number(retry.headers.get('retry-after')) <= 60);
+    assert.match(await retry.text(), /Try again in 1 minute\./);
+    Date.now = () => clockStart + 15 * 60000;
+    const allowed = await visitor.form('/login', { username: 'admin', password: 'admin123' });
+    assert.equal(allowed.status, 302, 'Blocked retries must not extend the cooldown');
+    assert.equal(allowed.headers.get('location'), '/change-password');
+  } finally { Date.now = oldNow; }
   const temp = temporary();
   let store = new LocalSessionStore(path.join(temp.dir, 'sessions.db'));
   try {

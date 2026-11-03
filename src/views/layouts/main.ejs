@@ -4,52 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<%= csrfToken %>">
-  <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'">
   <title><%= title %> · Pharmacy PMS</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body class="min-h-screen flex flex-col bg-slate-100 text-slate-800">
-
-  <header class="bg-emerald-700 text-white shadow print:hidden">
-    <div class="max-w-6xl mx-auto px-6 py-3 flex flex-wrap gap-4 items-center justify-between">
-      <a href="/" class="text-lg font-semibold tracking-tight">💊 Pharmacy PMS</a>
-      <nav class="flex flex-wrap gap-4 items-center text-sm">
-        <% if (user && !user.must_change_password) { %>
-        <% if (user.role === 'admin') { %>
-        <a href="/" class="<%= currentPath === '/' ? 'font-semibold underline' : 'opacity-90 hover:opacity-100' %>">Dashboard</a>
+<% const shell = user && !user.must_change_password;
+   const admin = user && user.role === 'admin';
+   const initials = user ? user.full_name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase() : '';
+   const onDashboard = currentPath === '/' || currentPath === '/dashboard'; %>
+<body class="min-h-screen bg-slate-100 text-slate-800">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 bg-white p-3">Skip to content</a>
+  <% if (shell) { %>
+  <button type="button" id="sidebar-overlay" aria-label="Close navigation" class="hidden fixed inset-0 bg-slate-900/40 z-30 xl:hidden print:hidden"></button>
+  <aside id="sidebar" class="hidden xl:flex fixed inset-y-0 left-0 z-40 w-60 flex-col border-r border-slate-200 bg-white print:hidden">
+    <a href="<%= admin ? '/' : '/dashboard' %>" class="flex items-center gap-3 px-6 py-7 text-lg font-bold tracking-tight">
+      <span class="rounded-xl bg-emerald-700 p-2 text-white"><%- include('../partials/icon', { name: 'inventory' }) %></span> Pharmacy PMS
+    </a>
+    <p class="px-6 pb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Workspace</p>
+    <nav aria-label="Main navigation" class="flex-1 overflow-y-auto px-3 space-y-1">
+      <% const links = [
+        ['Dashboard', admin ? '/' : '/dashboard', 'dashboard', onDashboard],
+        ['POS', '/pos', 'pos', currentPath.startsWith('/pos')],
+        ...(admin ? [['Inventory', '/medicines', 'inventory', currentPath.startsWith('/medicines')]] : []),
+        ['Alerts', admin ? '/alerts?days=' + alertDays : '/dashboard?days=' + alertDays + '#expiry-alerts', 'alerts', currentPath === '/alerts'],
+        ...(admin ? [['Users', '/users', 'users', currentPath.startsWith('/users')], ['Backups', '/backups', 'backups', currentPath.startsWith('/backups')]] : []),
+      ]; links.forEach(([label, href, icon, active]) => { %>
+      <a href="<%= href %>" <%- active ? 'aria-current="page"' : '' %> class="block rounded-xl px-3 py-3 text-sm font-medium <%= active ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' %>">
+        <span class="flex items-center gap-3"><%- include('../partials/icon', { name: icon }) %><%= label %><%= label === 'Backups' && backupError ? ' !' : '' %></span>
+        <% if (label === 'Alerts') { %>
+        <span class="flex flex-wrap gap-1 mt-2">
+          <span class="badge bg-amber-100 text-amber-900" aria-label="<%= alertCounts.low %> low-stock medicines">Low <span data-alert-count="low"><%= alertCounts.low %></span></span>
+          <span class="badge bg-orange-100 text-orange-900" aria-label="<%= alertCounts.near %> near-expiry batches">Soon <span data-alert-count="near"><%= alertCounts.near %></span></span>
+          <span class="badge bg-red-100 text-red-800" aria-label="<%= alertCounts.expired %> expired batches">Expired <span data-alert-count="expired"><%= alertCounts.expired %></span></span>
+        </span>
         <% } %>
-        <a href="/pos" class="<%= currentPath.startsWith('/pos') ? 'font-semibold underline' : 'opacity-90 hover:opacity-100' %>">POS</a>
-        <% if (user.role === 'admin') { %>
-        <a href="/medicines" class="<%= currentPath.startsWith('/medicines') ? 'font-semibold underline' : 'opacity-90 hover:opacity-100' %>">Inventory</a>
-        <a href="/alerts?days=<%= alertDays %>" class="<%= currentPath === '/alerts' ? 'font-semibold underline' : 'opacity-90 hover:opacity-100' %>">
-          Alerts
-          <span class="badge bg-amber-100 text-amber-800" title="Low-stock medicines" aria-label="<%= alertCounts.low %> low-stock medicines">Low <%= alertCounts.low %></span>
-          <span class="badge bg-orange-100 text-orange-800" title="Batches expiring within <%= alertDays %> days" aria-label="<%= alertCounts.near %> near-expiry batches">Soon <%= alertCounts.near %></span>
-          <span class="badge bg-red-100 text-red-700" title="Expired batches with stock" aria-label="<%= alertCounts.expired %> expired batches">Expired <%= alertCounts.expired %></span>
-        </a>
-        <a href="/users" class="hover:underline">Users</a>
-        <a href="/backups" class="hover:underline">Backups<%= backupError ? ' ⚠' : '' %></a>
-        <% } %>
-        <% } %>
-        <% if (user) { %>
-        <a href="/change-password" class="hover:underline"><%= user.full_name %> · Password</a>
-        <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="hover:underline">Log out</button></form>
-        <% } %>
-      </nav>
+      </a>
+      <% }); %>
+    </nav>
+    <div class="border-t border-slate-100 p-5 text-sm">
+      <p class="font-semibold break-words"><%= user.full_name %></p><p class="capitalize text-slate-500 mt-1"><%= user.role %></p>
+      <a href="/change-password" class="block mt-4 text-emerald-800 hover:underline">Change password</a>
+      <form method="post" action="/logout" class="mt-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="text-slate-600 hover:underline">Log out</button></form>
+      <p class="mt-5 text-xs text-slate-500"><span class="inline-block w-2 h-2 rounded-full bg-emerald-600 mr-1"></span> Offline ready · Local data</p>
     </div>
-  </header>
-
-    <main class="flex-1 w-full max-w-6xl mx-auto p-6">
-    <% if (user && user.role === 'admin' && backupError) { %><p class="mb-4 rounded bg-red-100 p-3 text-red-800">Automatic backup needs attention. <a class="underline" href="/backups">Review backups</a>.</p><% } %>
-    <%- include('../partials/flash') %>
-    <%- body %>
-  </main>
-
-  <footer class="text-center text-xs text-slate-500 py-3 print:hidden">
-    Offline mode · all data stays on this computer
-  </footer>
-
+  </aside>
+  <% } %>
+  <div class="min-w-0 <%= shell ? 'xl:ml-60 print:ml-0' : '' %>">
+    <header class="border-b border-slate-200 bg-white px-6 py-4 flex flex-wrap items-center gap-4 print:hidden">
+      <% if (shell) { %>
+      <button type="button" id="sidebar-toggle" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false" class="btn btn-secondary xl:hidden"><%- include('../partials/icon', { name: 'menu' }) %></button>
+      <span class="font-semibold"><%= title %></span>
+      <% if (admin) { %><form method="get" action="/medicines" role="search" class="flex items-center gap-2 flex-1 min-w-0 max-w-sm ml-auto">
+        <label class="sr-only" for="shell-search">Search medicines</label><input id="shell-search" name="q" class="input bg-slate-50" placeholder="Search medicines…" maxlength="150"><button class="p-2 text-slate-500" aria-label="Search medicines"><%- include('../partials/icon', { name: 'search' }) %></button>
+      </form><% } %>
+      <form method="get" action="<%= admin ? '/' : '/dashboard' %>" class="flex items-center gap-2 ml-auto">
+        <input type="hidden" name="days" value="<%= alertDays %>">
+        <label for="dashboard-range" class="sr-only">Dashboard date range</label>
+        <select name="range" id="dashboard-range" class="input">
+          <% [['today', 'Today'], ['7', '7 days'], ['30', '30 days'], ['month', 'This month']].forEach(([value, label]) => { %><option value="<%= value %>" <%= value === dashboardRange ? 'selected' : '' %>><%= label %></option><% }); %>
+        </select><button class="btn btn-secondary">Apply</button>
+      </form>
+      <span class="inline-flex items-center justify-center rounded-full bg-emerald-100 text-emerald-900 w-10 h-10 font-semibold shrink-0" title="<%= user.full_name %> · <%= user.role %>" aria-label="<%= user.full_name %> · <%= user.role %>"><%= initials %></span>
+      <% } else { %>
+      <span class="font-bold text-emerald-800">Pharmacy PMS</span>
+      <% if (user) { %><form method="post" action="/logout" class="ml-auto"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-secondary">Log out</button></form><% } %>
+      <% } %>
+    </header>
+    <main id="main-content" class="w-full min-w-0 max-w-screen-2xl mx-auto p-6 print:p-0">
+      <% if (admin && backupError) { %><p class="mb-4 rounded bg-red-100 p-3 text-red-800 print:hidden">Automatic backup needs attention. <a class="underline" href="/backups">Review backups</a>.</p><% } %>
+      <%- include('../partials/flash') %>
+      <%- body %>
+    </main>
+    <% if (!shell) { %><footer class="text-center text-xs text-slate-500 py-3 print:hidden">Offline mode · all data stays on this computer</footer><% } %>
+  </div>
   <script src="/js/app.js" defer></script>
+  <script src="/js/shell.js" defer></script>
 </body>
 </html>
