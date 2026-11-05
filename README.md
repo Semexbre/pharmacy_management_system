@@ -4,7 +4,7 @@
 
 Main features:batch and expiry tracking, barcode POS with earliest-expiry-first selling and printable receipts, low-stock and near-expiry alerts, Admin/Cashier login with password reset, and local database backups.
 
-Video presentation:
+Video presentation: https://drive.google.com/file/d/1Q3ymTVKrVCrX6-3HNoTKQ59YVJfLdz_n/view?usp=drivesdk
 
 ## Team Members
 
