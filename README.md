@@ -1,3 +1,17 @@
+## Project Information
+
+##Purpose: Pharmacy PMS is an offline-first desktop application that helps a pharmacy manage medicine inventory, sell with a barcode point of sale, and avoid expired or out-of-stock medicines, without needing an internet connection.
+
+Main features:batch and expiry tracking, barcode POS with earliest-expiry-first selling and printable receipts, low-stock and near-expiry alerts, Admin/Cashier login with password reset, and local database backups.
+
+Video presentation:
+
+## Team Members
+
+| Full name |                CTC ID |
+SEMERE ABERA HAILEMARIAM       CTC-5267-26
+
+
 # Pharmacy PMS
 
 ## Development
